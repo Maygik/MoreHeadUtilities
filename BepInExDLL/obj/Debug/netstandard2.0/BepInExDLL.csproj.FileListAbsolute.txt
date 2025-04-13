@@ -1,0 +1,5 @@
+C:\Users\xande\Downloads\MoreHeadUtilities\BepInExDLL\obj\Debug\netstandard2.0\BepInExDLL.csproj.AssemblyReference.cache
+C:\Users\xande\Downloads\MoreHeadUtilities\BepInExDLL\obj\Debug\netstandard2.0\BepInExDLL.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\xande\Downloads\MoreHeadUtilities\BepInExDLL\obj\Debug\netstandard2.0\BepInExDLL.AssemblyInfoInputs.cache
+C:\Users\xande\Downloads\MoreHeadUtilities\BepInExDLL\obj\Debug\netstandard2.0\BepInExDLL.AssemblyInfo.cs
+C:\Users\xande\Downloads\MoreHeadUtilities\BepInExDLL\obj\Debug\netstandard2.0\BepInExDLL.csproj.CoreCompileInputs.cache

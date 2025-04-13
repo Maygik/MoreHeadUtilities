@@ -1,0 +1,5 @@
+C:\Users\xande\Downloads\MoreHeadUtilities\UnityEditorDLL\obj\Debug\netstandard2.0\UnityEditorDLL.csproj.AssemblyReference.cache
+C:\Users\xande\Downloads\MoreHeadUtilities\UnityEditorDLL\obj\Debug\netstandard2.0\UnityEditorDLL.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\xande\Downloads\MoreHeadUtilities\UnityEditorDLL\obj\Debug\netstandard2.0\UnityEditorDLL.AssemblyInfoInputs.cache
+C:\Users\xande\Downloads\MoreHeadUtilities\UnityEditorDLL\obj\Debug\netstandard2.0\UnityEditorDLL.AssemblyInfo.cs
+C:\Users\xande\Downloads\MoreHeadUtilities\UnityEditorDLL\obj\Debug\netstandard2.0\UnityEditorDLL.csproj.CoreCompileInputs.cache
