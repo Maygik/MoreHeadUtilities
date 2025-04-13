@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MoreHeadUtilities")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+19e6f8a082d8b95e6159f63d1232293ced96a048")]
 [assembly: System.Reflection.AssemblyProductAttribute("MoreHeadUtilities")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MoreHeadUtilities")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
