@@ -1,0 +1,10 @@
+{
+  "name": "PartRemovers",
+  "version_number": "1.0.2",
+  "website_url": "https://github.com/Maygik/MoreHeadUtilities",
+  "description": "MoreHead cosmetics for removing body parts.",
+  "dependencies": [
+	"YMC_MHZ-MoreHead-1.3.9",
+	"Maygik-MoreHeadUtilities-1.0.4"
+  ]
+}

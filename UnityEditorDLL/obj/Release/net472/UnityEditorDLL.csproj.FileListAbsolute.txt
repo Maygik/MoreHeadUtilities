@@ -26,3 +26,4 @@ E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEditorDLL.csproj.Cor
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEdi.E875C656.Up2Date
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\MoreHeadUtilities.dll
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\MoreHeadUtilities.pdb
+E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEditorDLL.sourcelink.json

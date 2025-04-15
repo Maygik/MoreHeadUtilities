@@ -21,7 +21,7 @@ namespace MoreHeadUtilities
     public class PartShrinker : MonoBehaviour
     {
         // The part to hide
-        [SerializeField] private HiddenParts.Part partToHide = HiddenParts.Part.Head;
+        [SerializeField] private HiddenParts.Part partToHide = HiddenParts.Part.LeftPupil;
 
         // Should the part hide all children as well?
         [SerializeField] private bool hideChildren = true;

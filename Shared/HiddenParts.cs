@@ -33,8 +33,7 @@ namespace MoreHeadUtilities
 #endif
 
 
-        // Parts that can be hidden  
-        // Health->EyeRight no children  
+        // Parts that can be hidden
         // Head->Hips  
         public enum Part
         {
@@ -49,37 +48,43 @@ namespace MoreHeadUtilities
             Neck,
             Body,
             Hips,
-        }
+            LeftPupil,
+            RightPupil,
+        };
 
         // Mesh names to be hidden when cosmetic is enabled  
         private string[][] partNames = new string[][]
         {
-               new string[] { "mesh_health", "mesh_health frame", "mesh_health shadow" },  // Health                       
-               new string[] { "mesh_arm_l" },                                              // Arm Left                       
-               new string[] { "mesh_arm_r" },                                              // Arm Right                       
-               new string[] { "mesh_leg_l" },                                              // Leg Left                       
-               new string[] { "mesh_leg_r" },                                              // Leg Right                       
-               new string[] { "mesh_eye_l", "mesh_pupil_l" },                              // Eye Left                       
-               new string[] { "mesh_eye_r", "mesh_pupil_r" },                              // Eye Right                       
-               new string[] { "mesh_head_top" },                                           // Head                       
-               new string[] { "mesh_head_bot_sphere", "mesh_head_bot_flat"},               // Neck                       
-               new string[] { "mesh_body_top_sphere", "mesh_body_top_flat" },              // Body                       
-               new string[] { "mesh_body_bot" },                                           // Hips                       
+               new string[] { "mesh_health", "mesh_health frame", "mesh_health shadow" },   // Health                       
+               new string[] { "mesh_arm_l" },                                               // Arm Left                       
+               new string[] { "mesh_arm_r" },                                               // Arm Right                       
+               new string[] { "mesh_leg_l" },                                               // Leg Left                       
+               new string[] { "mesh_leg_r" },                                               // Leg Right                       
+               new string[] { "mesh_eye_l" },                                               // Eye Left                       
+               new string[] { "mesh_eye_r" },                                               // Eye Right                       
+               new string[] { "mesh_head_top" },                                            // Head                       
+               new string[] { "mesh_head_bot_sphere", "mesh_head_bot_flat"},                // Neck                       
+               new string[] { "mesh_body_top_sphere", "mesh_body_top_flat" },               // Body                       
+               new string[] { "mesh_body_bot" },                                            // Hips                       
+               new string[] { "mesh_pupil_l" },                                             // Left Pupil
+               new string[] { "mesh_pupil_r" },                                             // Right Pupil
         };
 
         private Part[][] childParts = new Part[][]
         {
-               new Part[] {  },                                                    // Health         
-               new Part[] {  },                                                    // Arm Left       
-               new Part[] {  },                                                    // Arm Right      
-               new Part[] {  },                                                    // Leg Left       
-               new Part[] {  },                                                    // Leg Right      
-               new Part[] {  },                                                    // Eye Left       
-               new Part[] {  },                                                    // Eye Right      
-               new Part[] { Part.EyeLeft, Part.EyeRight },                         // Head           
-               new Part[] { Part.Head, Part.Health },                              // Neck           
-               new Part[] { Part.Neck, Part.LeftArm, Part.RightArm },              // Body           
-               new Part[] { Part.Body, Part.LeftLeg, Part.RightLeg }               // Hips           
+               new Part[] {  },                                                             // Health         
+               new Part[] {  },                                                             // Arm Left       
+               new Part[] {  },                                                             // Arm Right      
+               new Part[] {  },                                                             // Leg Left       
+               new Part[] {  },                                                             // Leg Right      
+               new Part[] { Part.LeftPupil },                                               // Eye Left       
+               new Part[] { Part.RightPupil },                                              // Eye Right      
+               new Part[] { Part.EyeLeft, Part.EyeRight },                                  // Head           
+               new Part[] { Part.Head, Part.Health },                                       // Neck           
+               new Part[] { Part.Neck, Part.LeftArm, Part.RightArm },                       // Body           
+               new Part[] { Part.Body, Part.LeftLeg, Part.RightLeg },                       // Hips           
+               new Part[] {  },                                                             // Left Pupil
+               new Part[] {  },                                                             // Right Pupil
         };
 
         private List<Part> hiddenParts = new List<Part>();

@@ -280,3 +280,4 @@ E:\MoreHeadUtilities\BepInExDLL\obj\Release\net472\BepInExDLL.csproj.CoreCompile
 E:\MoreHeadUtilities\BepInExDLL\obj\Release\net472\BepInExDLL.csproj.Up2Date
 E:\MoreHeadUtilities\BepInExDLL\obj\Release\net472\MoreHeadUtilities.dll
 E:\MoreHeadUtilities\BepInExDLL\obj\Release\net472\MoreHeadUtilities.pdb
+E:\MoreHeadUtilities\BepInExDLL\obj\Release\net472\BepInExDLL.sourcelink.json
