@@ -47,7 +47,9 @@ Hips
 
 
 ## Updates
-
+- 1.0.3
+	- Massively improved performance when opening MoreHead menu
+	- Added config to enable/disable logging
 - 1.0.2
 	- Separated Eye and Pupil hiding
 	- Backwards compatible (Although if "Hide Children" was disabled on eyes from an older version, it will still keep the pupils)
