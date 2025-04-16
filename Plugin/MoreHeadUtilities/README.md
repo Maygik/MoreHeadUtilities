@@ -19,11 +19,11 @@ To setup this mod on your cosmetic
 2. Follow the standard [MoreHead](https://thunderstore.io/c/repo/p/YMC_MHZ/MoreHead/) development to just before using the Head Decorations Builder
 3. Add the PartShrinker component to the empty (although object in the accessory technically works). "World" accessories cannot hide parts.
 
-![UnityComponent](https://raw.githubusercontent.com/Maygik/MoreHeadUtilities/refs/heads/master/Shared/UnityComponent.png)
+    ![UnityComponent](https://raw.githubusercontent.com/Maygik/MoreHeadUtilities/refs/heads/master/Shared/UnityComponent.png)
 
 4. Setup which part should be hidden in the component properties, and whether the part's child parts should also be hidden
 
-![BodyParts](https://raw.githubusercontent.com/Maygik/MoreHeadUtilities/refs/heads/master/Shared/BodyParts.png)
+    ![BodyParts](https://raw.githubusercontent.com/Maygik/MoreHeadUtilities/refs/heads/master/Shared/BodyParts.png)
 
 5. Continue with MoreHead setup as normal
 

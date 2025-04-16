@@ -8,30 +8,57 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Configuration;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+using Debug = UnityEngine.Debug;
 
 #if BEPINEX
 using BepInEx.Logging;
+using MoreHeadUtilities.Plugin;
 #endif
+
+
 
 namespace MoreHeadUtilities
 {
     public class HiddenParts : MonoBehaviour
     {
 
+
 #if BEPINEX
-        public static ManualLogSource Log;
+        public static ManualLogSource bepInExLog;
 
         public static void Init(ManualLogSource source)
         {
-            Log = source;
-            Log.LogInfo("LoggerUtil initialized!");
+            bepInExLog = source;
+            bepInExLog.LogInfo("LoggerUtil initialized!");
         }
 #endif
 
+        public void Log(string message)
+        {
+#if BEPINEX
+            if (!MoreHeadUtilitiesPlugin._enableDebugLogging.Value)
+                return;
+            bepInExLog.LogInfo(message);
+#else
+            Debug.Log(message);
+#endif
+        }
+
+        public void LogError(string message)
+        {
+#if BEPINEX
+            if (!MoreHeadUtilitiesPlugin._enableDebugLogging.Value)
+                return;
+            bepInExLog.LogError(message);
+#else
+            Debug.LogError(message);
+#endif
+        }
 
         // Parts that can be hidden
         // Head->Hips  
@@ -70,6 +97,23 @@ namespace MoreHeadUtilities
                new string[] { "mesh_pupil_r" },                                             // Right Pupil
         };
 
+        private MeshRenderer[][] partRenderers = new MeshRenderer[][]
+        {
+            new MeshRenderer[3],                                                            // Health     
+            new MeshRenderer[1],                                                            // Arm Left   
+            new MeshRenderer[1],                                                            // Arm Right  
+            new MeshRenderer[1],                                                            // Leg Left   
+            new MeshRenderer[1],                                                            // Leg Right  
+            new MeshRenderer[1],                                                            // Eye Left   
+            new MeshRenderer[1],                                                            // Eye Right  
+            new MeshRenderer[1],                                                            // Head       
+            new MeshRenderer[2],                                                            // Neck       
+            new MeshRenderer[2],                                                            // Body       
+            new MeshRenderer[1],                                                            // Hips       
+            new MeshRenderer[1],                                                            // Left Pupil
+            new MeshRenderer[1],                                                            // Right Pupil
+        };
+
         private Part[][] childParts = new Part[][]
         {
                new Part[] {  },                                                             // Health         
@@ -89,13 +133,37 @@ namespace MoreHeadUtilities
 
         private List<Part> hiddenParts = new List<Part>();
 
+
+        private bool updatedThisFrame = false;
+
+        public void Start()
+        {
+            foreach (Part part in Enum.GetValues(typeof(Part)))
+            {
+                for (int i = 0; i < partNames[(int)part].Length; ++i)
+                {
+                    Transform partTransform = FindInHierarchy(transform, partNames[(int)part][i]);
+
+                    if (partTransform == null)
+                    {
+                        Log($"Part '{partNames[(int)part][i]}' not found");
+                        continue;
+                    }
+
+                    MeshRenderer partRenderer = partTransform.gameObject.GetComponent<MeshRenderer>();
+
+                    if (partRenderer)
+                    {
+                        Log($"Found part '{partNames[(int)part][i]}'");
+                        partRenderers[(int)part][i] = partRenderer;
+                    }
+                }
+            }
+        }
+
         public void AddHiddenPart(Part part, bool hideChildren, bool update = true)
         {
-#if BEPINEX
-            Log?.LogInfo($"Adding part {part}");  
-#else
-            Debug.Log($"Adding part {part}");
-#endif
+            Log($"Adding part {part}");
 
             hiddenParts.Add(part);
 
@@ -107,10 +175,7 @@ namespace MoreHeadUtilities
                 }
             }
 
-            if (update)
-            {
-                UpdateHiddenParts();
-            }
+            updatedThisFrame = true;
         }
 
         public void RemoveHiddenPart(Part part, bool hideChildren, bool update = true)
@@ -130,31 +195,7 @@ namespace MoreHeadUtilities
                 }
             }
 
-            if (update)
-            {
-                UpdateHiddenParts();
-            }
-        }
-
-        public void UpdateHiddenParts()
-        {
-#if BEPINEX
-            Log?.LogInfo($"Updating parts, to be hidden: {hiddenParts.ToArray()}");  
-#else
-            Debug.Log($"Updating parts, to be hidden: {hiddenParts.ToArray()}");
-#endif
-
-            // Show all parts first  
-            foreach (Part part in Enum.GetValues(typeof(Part)))
-            {
-                ShowPart(part);
-            }
-
-            // Hide the parts that are in the list  
-            foreach (var part in hiddenParts)
-            {
-                HidePart(part);
-            }
+            updatedThisFrame = true;
         }
 
         // Helper method to search the entire hierarchy  
@@ -172,28 +213,42 @@ namespace MoreHeadUtilities
 
             return null;
         }
+        public void LateUpdate()
+        {
+            // Update the parts if they have changed  
+            if (updatedThisFrame)
+            {
+                UpdateHiddenParts();
+                updatedThisFrame = false;
+            }
+        }
+
+
+        public void UpdateHiddenParts()
+        {
+            Log($"Updating parts, to be hidden: {hiddenParts.ToArray()}");
+
+            // Show all parts first  
+            foreach (Part part in Enum.GetValues(typeof(Part)))
+            {
+                ShowPart(part);
+            }
+
+            // Hide the parts that are in the list  
+            foreach (var part in hiddenParts)
+            {
+                HidePart(part);
+            }
+        }
 
         private void ShowPart(Part partToShow)
         {
-            // For each mesh in the part  
-            foreach (string partName in partNames[(int)partToShow])
+            // For each mesh in the part
+            for (int i = 0; i < partNames[(int)partToShow].Length; ++i)
             {
-                // Find the transform of the part  
-                Transform part = FindInHierarchy(transform, partName);
+                MeshRenderer partRenderer = partRenderers[(int)partToShow][i].gameObject.GetComponent<MeshRenderer>();
 
-                if (part == null)
-                {
-#if BEPINEX
-                    Log?.LogInfo($"Part '{partName}' not found");  
-#else
-                    Debug.Log($"Part '{partName}' not found");
-#endif
-                    continue;
-                }
-
-                MeshRenderer partRenderer = part.gameObject.GetComponent<MeshRenderer>();
-
-                // If the part is found, enable the renderer  
+                // If the part is found, disable the renderer  
                 if (partRenderer)
                 {
                     partRenderer.enabled = true;
@@ -203,23 +258,10 @@ namespace MoreHeadUtilities
 
         private void HidePart(Part partToHide)
         {
-            // For each mesh in the part  
-            foreach (string partName in partNames[(int)partToHide])
+            // For each mesh in the part
+            for (int i = 0; i < partNames[(int)partToHide].Length; ++i)
             {
-                // Find the transform of the part  
-                Transform part = FindInHierarchy(transform, partName);
-
-                if (part == null)
-                {
-#if BEPINEX
-                    Log?.LogInfo($"Part '{partName}' not found");  
-#else
-                    Debug.Log($"Part '{partName}' not found");
-#endif
-                    continue;
-                }
-
-                MeshRenderer partRenderer = part.gameObject.GetComponent<MeshRenderer>();
+                MeshRenderer partRenderer = partRenderers[(int)partToHide][i].gameObject.GetComponent<MeshRenderer>();
 
                 // If the part is found, disable the renderer  
                 if (partRenderer)

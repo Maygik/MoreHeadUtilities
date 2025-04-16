@@ -8,12 +8,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Configuration;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+using MoreHeadUtilities;
+using Debug = UnityEngine.Debug;
 
 #if BEPINEX
 using BepInEx.Logging;
+using MoreHeadUtilities.Plugin;
 #endif
 
 namespace MoreHeadUtilities
@@ -29,82 +33,111 @@ namespace MoreHeadUtilities
         private Transform TotalParent;
         private HiddenParts parentComponent;
 
-        void OnEnable()
-        {
-            // Is running when menu first opened
-            // Figure out a way to stop that to reduce lag
+        private static double totalSearchingTime = 0;
 
-            if (!parentComponent)
-            {
-#if BEPINEX
-                    Log.LogInfo("[PartShrinker] OnEnable called.");
-#else
-                Debug.Log("[PartShrinker] OnEnable called.");
-#endif
-
-                TotalParent = transform;
-                while (TotalParent.name != "ANIM BOT" && TotalParent.name != null && TotalParent.name != "WorldDecorationFollower")
-                {
-                    TotalParent = TotalParent.parent;
-                }
-
-                if (TotalParent.name == null)
-                {
-#if BEPINEX
-                    Log.LogError($"No root found");
-#else
-                    Debug.LogError($"No root found");
-#endif
-                    return;
-                }
-
-                if (TotalParent.name == "WorldDecorationFollower")
-                {
-#if BEPINEX
-                    Log.LogInfo($"MoreHeadUtilities does not support part removal from a world object");
-#else
-                    Debug.Log($"MoreHeadUtilities does not support part removal from a world object");
-#endif
-                    return;
-                }
-
-                parentComponent = TotalParent.GetComponent<HiddenParts>();
-                if (!parentComponent)
-                {
-                    parentComponent = TotalParent.gameObject.AddComponent<HiddenParts>();
-                }
-                else
-                {
-#if BEPINEX
-                    Log.LogInfo($"Component already exists");
-#else
-                    Debug.Log($"Component already exists");
-#endif
-                }
-            }
-
-            parentComponent.AddHiddenPart(partToHide, hideChildren);
-        }
+        private bool isFrameOne = true;
+        private bool isFrameTwo = false;
 
 #if BEPINEX
-            public static ManualLogSource Log;
+            public static ManualLogSource bepInExLog;
 
             public static void Init(ManualLogSource source)
             {
-                Log = source;
-                Log.LogInfo("LoggerUtil initialized!");
+                bepInExLog = source;
+                bepInExLog.LogInfo("LoggerUtil initialized!");
             }
 #endif
 
+        public void Log(string message)
+        {
+#if BEPINEX
+            if (!MoreHeadUtilitiesPlugin._enableDebugLogging.Value)
+                return;
+            bepInExLog.LogInfo(message);
+#else
+            Debug.Log(message);
+#endif
+        }
+
+        public void LogError(string message)
+        {
+#if BEPINEX
+            if (!MoreHeadUtilitiesPlugin._enableDebugLogging.Value)
+                return;
+            bepInExLog.LogError(message);
+#else
+            Debug.LogError(message);
+#endif
+        }
+
+        public void Update()
+        {
+            if (isFrameOne)
+            {
+                isFrameOne = false;
+                isFrameTwo = true;
+            }
+            else if (isFrameTwo)
+            {
+                isFrameTwo = false;
+
+                // Is running when menu first opened
+                // Figure out a way to stop that to reduce lag
+
+                Stopwatch stopwatch = Stopwatch.StartNew();
+
+                if (!parentComponent)
+                {
+                    Log($"{gameObject.name} is finding parent on awakening");
+
+                    TotalParent = transform;
+                    while (TotalParent.name != "ANIM BOT" && TotalParent.name != null && TotalParent.name != "WorldDecorationFollower")
+                    {
+                        TotalParent = TotalParent.parent;
+                    }
+
+                    if (TotalParent.name == null)
+                    {
+                        LogError($"No root found");
+                        return;
+                    }
+
+                    if (TotalParent.name == "WorldDecorationFollower")
+                    {
+                        LogError($"{gameObject.name} is set to world parent. MoreHeadUtilities does not support part removal from a world object.");
+                        return;
+                    }
+
+                    parentComponent = TotalParent.GetComponent<HiddenParts>();
+                    if (!parentComponent)
+                    {
+                        parentComponent = TotalParent.gameObject.AddComponent<HiddenParts>();
+                    }
+                    else
+                    {
+                        Log($"Part already exists");
+                    }
+                }
+
+                parentComponent.AddHiddenPart(partToHide, hideChildren);
+            }
+        }
+        
+
         void OnDisable()
         {
+            if (isFrameOne)
+            {
+                return;
+            }
+            else
+            {
+                isFrameOne = true;
+            }
+
             if (!parentComponent)
             {
-#if BEPINEX
-                Log.LogInfo("OnDisable called.");
-#else
-                Debug.Log("[PartShrinker] OnDisable called.");
-#endif
+                Log($"{gameObject.name} is finding parent for destruction");
 
                 TotalParent = transform;
                 while (TotalParent.name != "ANIM BOT" && TotalParent.name != null && TotalParent.name != "WorldDecorationFollower")
@@ -114,21 +147,13 @@ namespace MoreHeadUtilities
 
                 if (TotalParent.name == null)
                 {
-#if BEPINEX
-                    Log.LogError($"No root found");
-#else
-                    Debug.LogError($"No root found");
-#endif
+                    LogError($"No root found");
                     return;
                 }
 
                 if (TotalParent.name == "WorldDecorationFollower")
                 {
-#if BEPINEX
-                    Log.LogInfo($"MoreHeadUtilities does not support part removal from a world object");
-#else
-                    Debug.Log($"MoreHeadUtilities does not support part removal from a world object");
-#endif
+                    LogError($"{gameObject.name} is set to world parent. MoreHeadUtilities does not support part removal from a world object.");
                     return;
                 }
 
@@ -139,11 +164,7 @@ namespace MoreHeadUtilities
                 }
                 else
                 {
-#if BEPINEX
-                    Log.LogInfo($"Component already exists");
-#else
-                    Debug.Log($"Component already exists");
-#endif
+                    Log($"Component already exists");
                 }
             }
 
