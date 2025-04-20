@@ -105,12 +105,12 @@ namespace MoreHead
                 var decorationManagerType = typeof(HeadDecorationManager);
                 const BindingFlags F = BindingFlags.Static | BindingFlags.NonPublic;
                 
-                // Check if the bundleBaseName contains "¬" and split it
+                // Check if the bundleBaseName contains "~" and split it
                 string? group = null;
 
-                if (bundleName.Contains("¬"))
+                if (bundleName.Contains("~"))
                 {
-                    string[] parts = bundleName.Split('¬');
+                    string[] parts = bundleName.Split('~');
                     if (parts.Length >= 2)
                     {
                         // sadge ^1 syntax doesn't work :(
