@@ -14,7 +14,7 @@
 
 	<ItemGroup>
 		<Reference Include="UnityEngine.CoreModule">
-			<HintPath>C:\\Program Files\\Unity\\Hub\\Editor\\2022.3.9f1\\Editor\\Data\\Managed\\UnityEngine\\UnityEngine.CoreModule.dll</HintPath>
+			<HintPath>C:\Program Files (x86)\Steam\steamapps\common\REPO\REPO_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 </Project>
