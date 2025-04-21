@@ -16,8 +16,6 @@ E:\MoreHeadUtilities\UnityEditorDLL\bin\Release\net472\MoreHeadUtilities.dll
 E:\MoreHeadUtilities\UnityEditorDLL\bin\Release\net472\MoreHeadUtilities.pdb
 E:\MoreHeadUtilities\UnityEditorDLL\bin\Release\net472\UnityEngine.CoreModule.dll
 E:\MoreHeadUtilities\UnityEditorDLL\bin\Release\net472\UnityEngine.SharedInternalsModule.dll
-E:\MoreHeadUtilities\UnityEditorDLL\bin\Release\net472\UnityEngine.CoreModule.xml
-E:\MoreHeadUtilities\UnityEditorDLL\bin\Release\net472\UnityEngine.SharedInternalsModule.xml
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEditorDLL.csproj.AssemblyReference.cache
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEditorDLL.GeneratedMSBuildEditorConfig.editorconfig
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEditorDLL.AssemblyInfoInputs.cache
@@ -27,3 +25,4 @@ E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEdi.E875C656.Up2Date
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\MoreHeadUtilities.dll
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\MoreHeadUtilities.pdb
 E:\MoreHeadUtilities\UnityEditorDLL\obj\Release\net472\UnityEditorDLL.sourcelink.json
+E:\MoreHeadUtilities\UnityEditorDLL\bin\Release\net472\netstandard.dll

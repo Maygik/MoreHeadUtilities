@@ -47,6 +47,8 @@ Hips
 
 
 ## Updates
+- 1.0.4
+    - Added groups to the MoreHead menu
 - 1.0.3
 	- Massively improved performance when opening MoreHead menu
 	- Added config to enable/disable logging

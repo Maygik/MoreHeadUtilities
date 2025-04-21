@@ -10,7 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Configuration;
+using System.Net;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using Debug = UnityEngine.Debug;
@@ -41,9 +41,7 @@ namespace MoreHeadUtilities
         public void Log(string message)
         {
 #if BEPINEX
-            if (!MoreHeadUtilitiesPlugin._enableDebugLogging.Value)
-                return;
-            bepInExLog.LogInfo(message);
+            bepInExLog?.LogInfo(message);
 #else
             Debug.Log(message);
 #endif
@@ -52,9 +50,7 @@ namespace MoreHeadUtilities
         public void LogError(string message)
         {
 #if BEPINEX
-            if (!MoreHeadUtilitiesPlugin._enableDebugLogging.Value)
-                return;
-            bepInExLog.LogError(message);
+            bepInExLog?.LogError(message);
 #else
             Debug.LogError(message);
 #endif

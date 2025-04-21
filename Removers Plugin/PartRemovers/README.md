@@ -12,6 +12,8 @@ This is primarily a demonstration of my [MoreHeadUtilities](https://thunderstore
 
 
 ## Patch Notes
+	-v1.0.3
+		- Added group support for MoreHeadUtilities
 	-v1.0.2
 		- Added Pupil removers
 	-v1.0.1

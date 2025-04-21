@@ -1,27 +1,46 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>net472</TargetFramework>
-		<DefineConstants>BEPINEX</DefineConstants>
-		<AssemblyName>MoreHeadUtilities</AssemblyName>
-	</PropertyGroup>
+<PropertyGroup>
+	<TargetFramework>net472</TargetFramework>
+	<LangVersion>latest</LangVersion>
+	<DefineConstants>BEPINEX</DefineConstants>
+	<AssemblyName>MoreHeadUtilities</AssemblyName>
+</PropertyGroup>
 
-	<ItemGroup>
-		<Compile Include="..\\Shared\\**\\*.cs" />
-		<Compile Include="..\\Shared\HeadPlugin.cs" />
-	</ItemGroup>
+<ItemGroup>
+	<Compile Include="..\\Shared\\**\\*.cs" />
+	<Compile Include="..\\Shared\HeadPlugin.cs" />
+</ItemGroup>
 
-	<ItemGroup>
-		<Reference Include="UnityEngine">
-			<HintPath>C:\Program Files\Unity\Hub\Editor\2022.3.9f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
-		</Reference>
-		<Reference Include="UnityEngine.CoreModule">
-			<HintPath>C:\\Program Files\\Unity\\Hub\\Editor\\2022.3.9f1\\Editor\\Data\\Managed\\UnityEngine\\UnityEngine.CoreModule.dll</HintPath>
-		</Reference>
-		<Reference Include="BepInEx">
-			<HintPath>C:\\Users\\xande\\AppData\\Roaming\\Thunderstore Mod Manager\\DataFolder\\REPO\\profiles\\Moddedleeldeded\\BepInEx\\core\\BepInEx.dll</HintPath>
-		</Reference>
-		<Reference Include="BepInEx.Core">
-			<HintPath>C:\\Users\\xande\\AppData\\Roaming\\Thunderstore Mod Manager\\DataFolder\\REPO\\profiles\\Moddedleeldeded\\BepInEx\\core\\BepInEx.Core.dll</HintPath>
-		</Reference>
-	</ItemGroup>
+<ItemGroup>
+	<Reference Include="UnityEngine">
+		<HintPath>C:\Program Files (x86)\Steam\steamapps\common\REPO\REPO_Data\Managed\UnityEngine.dll</HintPath>
+	</Reference>
+	<Reference Include="UnityEngine.CoreModule">
+		<HintPath>C:\Program Files (x86)\Steam\steamapps\common\REPO\REPO_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+	</Reference>
+	<Reference Include="BepInEx">
+		<HintPath>C:\\Users\\xande\\AppData\\Roaming\\Thunderstore Mod Manager\\DataFolder\\REPO\\profiles\\Moddedleeldeded\\BepInEx\\core\\BepInEx.dll</HintPath>
+	</Reference>
+	<Reference Include="BepInEx.Core">
+		<HintPath>C:\\Users\\xande\\AppData\\Roaming\\Thunderstore Mod Manager\\DataFolder\\REPO\\profiles\\Moddedleeldeded\\BepInEx\\core\\BepInEx.Core.dll</HintPath>
+	</Reference>
+	<Reference Include="0Harmony">
+		<HintPath>C:\Users\xande\AppData\Roaming\Thunderstore Mod Manager\DataFolder\REPO\profiles\Moddedleeldeded\BepInEx\core\0Harmony.dll</HintPath>
+	</Reference>
+	<Reference Include="MenuLib">
+		<HintPath>C:\Users\xande\AppData\Roaming\Thunderstore Mod Manager\DataFolder\REPO\profiles\Moddedleeldeded\BepInEx\plugins\nickklmao-MenuLib\MenuLib.dll</HintPath>
+	</Reference>
+	<Reference Include="Unity.TextMeshPro">
+		<HintPath>C:\Program Files (x86)\Steam\steamapps\common\REPO\REPO_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+	</Reference>
+	<Reference Include="UnityEngine.UI">
+		<HintPath>C:\Program Files (x86)\Steam\steamapps\common\REPO\REPO_Data\Managed\UnityEngine.UI.dll</HintPath>
+	</Reference>
+	<Reference Include="UnityEngine.UIModule">
+		<HintPath>C:\Program Files (x86)\Steam\steamapps\common\REPO\REPO_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+	</Reference>
+	<Reference Include="MoreHead">
+		<HintPath>E:\MoreHeadUtilities\Shared\MoreHead.dll</HintPath>
+	</Reference>
+</ItemGroup>
 </Project>
