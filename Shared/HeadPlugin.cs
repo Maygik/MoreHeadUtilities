@@ -26,6 +26,7 @@ namespace MoreHeadUtilities.Plugin
                 HiddenParts.Init(Logger);
                 Logger?.LogInfo("MoreHeadUtilities initialized and logger passed to HiddenParts.");
                 MoreHead.Logger.Init(Logger);
+                Logger?.LogInfo("MoreHeadUtilities initialized and logger passed to DecorationGroups.");
             }
 
             var harmony = new Harmony("com.maygik.moreheadutilities");

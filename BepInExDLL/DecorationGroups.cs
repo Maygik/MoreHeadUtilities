@@ -77,6 +77,8 @@ namespace MoreHead
         [CanBeNull] public static string group = null;
 
         public static bool resetPosition = true;
+
+        public static Dictionary<string?, REPOButton> groupButtons = new();
     }
 
     class HeadDecorationManagerStorage
@@ -207,12 +209,13 @@ namespace MoreHead
                         new object[] { decoration }
                     ))
                     .OrderBy(decoration =>
-                        HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)]
+                        HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)] ?? char.MaxValue.ToString()
                     )
                     .ThenBy(decoration => decoration.DisplayName)
                     .ToList();
 
                 Logger.Log($"externalDecorations sorted");
+
 
                 var CreateDecorationButtonMI = AccessTools.Method(
                     typeof(MoreHeadUI),
@@ -222,13 +225,11 @@ namespace MoreHead
 
                 foreach (var decoration in builtInDecorations)
                 {
-                    Logger.Log($"Creating built-in decoration");
                     CreateDecorationButtonMI.Invoke(null, new object[] {page, decoration});
                 }
 
                 foreach (var decoration in externalDecorations)
                 {
-                    Logger.Log($"Creating external decoration");
                     CreateDecorationButtonMI.Invoke(null, new object[] { page, decoration });
                 }
 
@@ -326,34 +327,29 @@ namespace MoreHead
                     && ci.opcode == OpCodes.Call
                     && ci.operand == ToListDecorations)
                 {
-                    toListHits++;
-                    // skip the first ToList(), apply on the second
-                    if (toListHits == 2)
-                    {
-                        Logger.Log("Patching Patch2_CreateAllDecorationButtons");
+                    Logger.Log("Patching Patch2_CreateAllDecorationButtons");
 
-                        // 1) Find the index of the *last* 'ret' in the method's IL
-                        int retIndex = codes.FindLastIndex(ci => ci.opcode == OpCodes.Ret);
-                        if (retIndex < 0)
-                            throw new InvalidOperationException("Couldn't find the final ret in CreateAllDecorationButtons");
+                    // 1) Find the index of the *last* 'ret' in the method's IL
+                    int retIndex = codes.FindLastIndex(ci => ci.opcode == OpCodes.Ret);
+                    if (retIndex < 0)
+                        throw new InvalidOperationException("Couldn't find the final ret in CreateAllDecorationButtons");
 
-                        var retInst = codes[retIndex];
-                        var leaveLabel = il.DefineLabel();
-                        // Attach the label to the real 'ret' instruction.
-                        retInst.labels.Add(leaveLabel);
+                    var retInst = codes[retIndex];
+                    var leaveLabel = il.DefineLabel();
+                    // Attach the label to the real 'ret' instruction.
+                    retInst.labels.Add(leaveLabel);
 
-                        // 3) Inject your helper call
-                        codes.Insert(++i, new CodeInstruction(OpCodes.Ldarg_0));          // push 'page'
-                        codes.Insert(++i, new CodeInstruction(OpCodes.Call, Helper2));   // call Helper2(page)
+                    // 3) Inject your helper call
+                    codes.Insert(++i, new CodeInstruction(OpCodes.Ldarg_0));          // push 'page'
+                    codes.Insert(++i, new CodeInstruction(OpCodes.Call, Helper2));   // call Helper2(page)
 
-                        // 4) Branch (Leave) to that final ret, properly unwinding any try/finally
-                        codes.Insert(++i, new CodeInstruction(OpCodes.Leave_S, leaveLabel));
+                    // 4) Branch (Leave) to that final ret, properly unwinding any try/finally
+                    codes.Insert(++i, new CodeInstruction(OpCodes.Leave_S, leaveLabel));
 
-                        Logger.Log("Patched Patch2_CreateAllDecorationButtons");
+                    Logger.Log("Patched Patch2_CreateAllDecorationButtons");
 
-                        // 5) Done—break so we keep the rest of the original IL (handlers & final epilogue)
-                        break;
-                    }
+                    // 5) Done—break so we keep the rest of the original IL (handlers & final epilogue)
+                    break;
                 }
             }
 
@@ -372,6 +368,8 @@ namespace MoreHead
         {
             MoreHeadUIStorage.page = page;
 
+            MoreHeadUIStorage.groupButtons.Clear();
+
             return true; // Continue execution of the original method.
         }
     }
@@ -383,8 +381,6 @@ namespace MoreHead
         [HarmonyPrefix]
         static bool Prefix(REPOPopupPage page, DecorationInfo decoration)
         {
-            Logger.Log($"CreateDecorationButton Prefix called");
-
             string? decoGroup =
                 HeadDecorationManagerStorage.Decorations[HeadDecorationManager.Decorations.IndexOf(decoration)];
 
@@ -410,7 +406,7 @@ namespace MoreHead
 
             const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
             // Use reflection to access the decorationsPage field
-            Logger.Log($"Accessing currentTagFilter");
+
             var currentTagFilterField = moreHeadUIType.GetField("LIMB_TAGS", bindingFlags);
             string[] LIMB_TAGS = (string[])currentTagFilterField.GetValue(null);
 
@@ -437,17 +433,20 @@ namespace MoreHead
             return true; // Return true to continue execution of the original method
         }
 
-        
+        private static string GetGroupButtonText(string group)
+        {
+            return MoreHeadGroupStorage.activeGroups[group] ? $"<size=20><color=#777777>[-]{group}</color></size>" : $"<size=20><color=#CCCCCC>[+]{group}</color></size>";
+        }
 
         // Create a title for the group
         private static void CreateGroupButton(REPOPopupPage page, string groupName)
         {
-            Logger.Log($"Creating group button: {groupName}");
+            Logger.LogError($"Creating group button: {groupName}");
             try
             {
                 // I'm not going to figure this out right now
                 //string buttonText = $"<size=20>{(activeGroups[groupName] ? "<color=#777777>[+]</color>" : "<color=#CCCCCC>[-]</color>")} {groupName}</size>";
-                string buttonText = $"<size=20>-{groupName}-</size>";
+                string buttonText = GetGroupButtonText(groupName);
 
                 // 创建按钮
                 REPOButton? repoButton = null;
@@ -462,7 +461,16 @@ namespace MoreHead
                     return repoButton.rectTransform;
                 });
 
-                MoreHeadUIStorage.group = groupName;
+                if (repoButton != null)
+                {
+                    MoreHeadUIStorage.groupButtons[groupName] = repoButton;
+                }
+                else
+                {
+                    throw new Exception($"Failed to create group button.");
+                }
+
+                    MoreHeadUIStorage.group = groupName;
                 Logger.Log($"Created group button: {groupName}");
             }
             catch (Exception e)
@@ -496,6 +504,13 @@ namespace MoreHead
                 null,
                 new object[] { currentTagFilter }
             );
+
+            // Update the button text
+            if (MoreHeadUIStorage.groupButtons.TryGetValue(groupName, out var button))
+            {
+                string buttonText = GetGroupButtonText(groupName);
+                button.labelTMP.text = buttonText;
+            }
 
             MoreHeadUIStorage.resetPosition = true;
         }
