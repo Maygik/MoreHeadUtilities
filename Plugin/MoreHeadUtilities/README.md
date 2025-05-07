@@ -14,7 +14,7 @@ Adds additional functionality to MoreHead, allowing cosmetics to hide body parts
 
 ## For Developers
 
-To setup this mod on your cosmetic
+To setup part removal on your cosmetics
 1. Install and import the [unity plugin](https://github.com/Maygik/MoreHeadUtilities/raw/refs/heads/master/MoreHeadUtilities.unitypackage) into your Unity project
 2. Follow the standard [MoreHead](https://thunderstore.io/c/repo/p/YMC_MHZ/MoreHead/) development to just before using the Head Decorations Builder
 3. Add the PartShrinker component to the empty (although object in the accessory technically works). "World" accessories cannot hide parts.
@@ -26,6 +26,12 @@ To setup this mod on your cosmetic
     ![BodyParts](https://raw.githubusercontent.com/Maygik/MoreHeadUtilities/refs/heads/master/Shared/BodyParts.png)
 
 5. Continue with MoreHead setup as normal
+
+
+To setup groups within the MoreHeadUI
+1. Export the cosmetic from Unity as per the normal MoreHead process
+2. Add ~{Group Name} to the .hhh file's name, just before the part specifier (e.g. "Pink Top Hat~Cool Hats_head.hhh)
+3. That's it
 
 ### Hierarchy for Child Parts
 ```
@@ -47,6 +53,10 @@ Hips
 
 
 ## Updates
+- 1.0.6
+    - Groups are now only visible if they have a decoration fulfilling the selected tag filter
+- 1.0.5
+    - Updated README to include instructions for grouping
 - 1.0.4
     - Added groups to the MoreHead menu
 - 1.0.3

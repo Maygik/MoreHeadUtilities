@@ -79,10 +79,12 @@ namespace MoreHead
         public static bool resetPosition = true;
 
         public static Dictionary<string?, REPOButton> groupButtons = new();
+        public static Dictionary<string?, List<string>> groupButtonTags = new();
     }
 
     class HeadDecorationManagerStorage
     {
+        // List of all groups
         public static List<string?> Decorations = new List<string?>();
     }
 
@@ -122,8 +124,15 @@ namespace MoreHead
                 }
 
                 Logger.Log($"Adding decoration");
-
                 HeadDecorationManagerStorage.Decorations.Add(group);
+            }
+
+
+            public static void Patch3_LoadDecorationBundle()
+            {
+                // Remove last input if asset bundle was never fully loaded
+                HeadDecorationManagerStorage.Decorations.RemoveAt(HeadDecorationManagerStorage.Decorations.Count-1);
+                Logger.Log($"Removing last from decoration group list");
             }
         }
 
@@ -150,94 +159,102 @@ namespace MoreHead
 
             public static void Patch2_CreateAllDecorationButtons(REPOPopupPage page)
             {
-                Logger.Log($"Starting Patch2_CreateAllDecorationButtons");
-                // grab the private static fields via reflection  
-                var uiType = typeof(MoreHeadUI);
-                const BindingFlags F = BindingFlags.Static | BindingFlags.NonPublic;
-
-                var tags = (string[])uiType.GetField("ALL_TAGS", F).GetValue(null)!;
-
-
-                var allDecorations = HeadDecorationManager.Decorations.ToList();
-
-                Logger.Log($"Gotten IsBuiltInDecoration");
-
-                var isBuiltInMI = AccessTools.Method(
-                    typeof(MoreHeadUI),
-                    "IsBuiltInDecoration",
-                    new Type[] { typeof(DecorationInfo) }
-                )!;
-
-                // Ensure the method signature matches the delegate type
-                if (isBuiltInMI.GetParameters().Length == 1 && isBuiltInMI.ReturnType == typeof(bool))
+                try
                 {
-                    var isBuiltIn = (Func<DecorationInfo, bool>)Delegate.CreateDelegate(
-                        typeof(Func<DecorationInfo, bool>),
-                        isBuiltInMI
-                    );
-                    Logger.Log("Delegate successfully created for IsBuiltInDecoration.");
+                    Logger.Log($"Starting Patch2_CreateAllDecorationButtons");
+                    // grab the private static fields via reflection  
+                    var uiType = typeof(MoreHeadUI);
+                    const BindingFlags F = BindingFlags.Static | BindingFlags.NonPublic;
+
+                    var tags = (string[])uiType.GetField("ALL_TAGS", F).GetValue(null)!;
+
+
+                    var allDecorations = HeadDecorationManager.Decorations.ToList();
+
+                    Logger.Log($"Gotten IsBuiltInDecoration");
+
+                    var isBuiltInMI = AccessTools.Method(
+                        typeof(MoreHeadUI),
+                        "IsBuiltInDecoration",
+                        new Type[] { typeof(DecorationInfo) }
+                    )!;
+
+                    // Ensure the method signature matches the delegate type
+                    if (isBuiltInMI.GetParameters().Length == 1 && isBuiltInMI.ReturnType == typeof(bool))
+                    {
+                        var isBuiltIn = (Func<DecorationInfo, bool>)Delegate.CreateDelegate(
+                            typeof(Func<DecorationInfo, bool>),
+                            isBuiltInMI
+                        );
+                        Logger.Log("Delegate successfully created for IsBuiltInDecoration.");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("IsBuiltInDecoration method signature does not match Func<DecorationInfo, bool>.");
+                    }
+
+                    Logger.Log($"Bound Delegate");
+
+                    // 2) build your list
+                    var builtInDecorations = allDecorations
+                        // cast Invoke(...) back to bool so Where gets a bool
+                        .Where(decoration => (bool)isBuiltInMI.Invoke(
+                            null,
+                            new object[] { decoration }
+                        ))
+                        // —or— simply use the delegate:
+                        //.Where(isBuiltIn)
+
+                        // Order by the DecorationInfo itself, not its Name
+                        .OrderBy(decoration =>
+                            HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)]
+                        )
+                        .ThenBy(decoration => decoration.DisplayName)
+                        .ToList();
+
+                    Logger.Log($"builtInDecorations sorted");
+
+                    var externalDecorations = allDecorations
+                        .Where(decoration => !(bool)isBuiltInMI.Invoke(
+                            null,
+                            new object[] { decoration }
+                        ))
+                        .OrderBy(decoration =>
+                            HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)] ?? char.MaxValue.ToString()
+                        )
+                        .ThenBy(decoration => decoration.DisplayName)
+                        .ToList();
+
+                    Logger.Log($"externalDecorations sorted");
+
+
+                    var CreateDecorationButtonMI = AccessTools.Method(
+                        typeof(MoreHeadUI),
+                        "CreateDecorationButton",
+                        new Type[] { typeof(REPOPopupPage), typeof(DecorationInfo) }
+                    )!;
+
+                    foreach (var decoration in builtInDecorations)
+                    {
+                        CreateDecorationButtonMI.Invoke(null, new object[] { page, decoration });
+                    }
+
+                    foreach (var decoration in externalDecorations)
+                    {
+                        CreateDecorationButtonMI.Invoke(null, new object[] { page, decoration });
+                    }
+
+                    Logger.Log($"externalDecorations all created");
+
+                    MoreHeadUIStorage.group = null;
+
+                    // Return from ORIGINAL function, not this patch
                 }
-                else
+                catch (Exception e)
                 {
-                    throw new InvalidOperationException("IsBuiltInDecoration method signature does not match Func<DecorationInfo, bool>.");
+                    Logger.LogError($"Error creating all decoration buttons: {e}");
+                    throw;
                 }
-
-                Logger.Log($"Bound Delegate");
-
-                // 2) build your list
-                var builtInDecorations = allDecorations
-                    // cast Invoke(...) back to bool so Where gets a bool
-                    .Where(decoration => (bool)isBuiltInMI.Invoke(
-                        null,
-                        new object[] { decoration }
-                    ))
-                    // —or— simply use the delegate:
-                    //.Where(isBuiltIn)
-
-                    // Order by the DecorationInfo itself, not its Name
-                    .OrderBy(decoration =>
-                        HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)]
-                    )
-                    .ThenBy(decoration => decoration.DisplayName)
-                    .ToList();
-
-                Logger.Log($"builtInDecorations sorted");
-
-                var externalDecorations = allDecorations
-                    .Where(decoration => !(bool)isBuiltInMI.Invoke(
-                        null,
-                        new object[] { decoration }
-                    ))
-                    .OrderBy(decoration =>
-                        HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)] ?? char.MaxValue.ToString()
-                    )
-                    .ThenBy(decoration => decoration.DisplayName)
-                    .ToList();
-
-                Logger.Log($"externalDecorations sorted");
-
-
-                var CreateDecorationButtonMI = AccessTools.Method(
-                    typeof(MoreHeadUI),
-                    "CreateDecorationButton",
-                    new Type[] { typeof(REPOPopupPage), typeof(DecorationInfo) }
-                )!;
-
-                foreach (var decoration in builtInDecorations)
-                {
-                    CreateDecorationButtonMI.Invoke(null, new object[] {page, decoration});
-                }
-
-                foreach (var decoration in externalDecorations)
-                {
-                    CreateDecorationButtonMI.Invoke(null, new object[] { page, decoration });
-                }
-
-                Logger.Log($"externalDecorations all created");
-
-                MoreHeadUIStorage.group = null;
-
-                // Return from ORIGINAL function, not this patch
             }
 
             private static bool _inHelper = false;
@@ -369,6 +386,7 @@ namespace MoreHead
             MoreHeadUIStorage.page = page;
 
             MoreHeadUIStorage.groupButtons.Clear();
+            MoreHeadUIStorage.groupButtonTags.Clear();
 
             return true; // Continue execution of the original method.
         }
@@ -381,56 +399,86 @@ namespace MoreHead
         [HarmonyPrefix]
         static bool Prefix(REPOPopupPage page, DecorationInfo decoration)
         {
-            string? decoGroup =
-                HeadDecorationManagerStorage.Decorations[HeadDecorationManager.Decorations.IndexOf(decoration)];
-
-            if (decoGroup != null && decoGroup != "")
+            try
             {
-                if (MoreHeadGroupStorage.tagGroupElements.TryGetValue("ALL", out var groupElements))
-                {
-                    if (!MoreHeadGroupStorage.activeGroups.ContainsKey(decoGroup))
-                    {
-                        MoreHeadGroupStorage.activeGroups[decoGroup] = false;
-                    }
+                string? decoGroup =
+                    HeadDecorationManagerStorage.Decorations[HeadDecorationManager.Decorations.IndexOf(decoration)];
 
-                    if (!groupElements.Contains(decoGroup))
+                if (decoGroup != null && decoGroup != "")
+                {
+                    if (MoreHeadGroupStorage.tagGroupElements.TryGetValue("ALL", out var groupElements))
                     {
-                        CreateGroupButton(page, decoGroup);
+                        if (!MoreHeadGroupStorage.activeGroups.ContainsKey(decoGroup))
+                        {
+                            Logger.Log($"Initialising group: {decoGroup}");
+                            MoreHeadGroupStorage.activeGroups[decoGroup] = false;
+                        }
+
+                        if (!groupElements.Contains(decoGroup))
+                        {
+                            CreateGroupButton(page, decoGroup);
+                        }
                     }
                 }
-            }
 
 
-            // Get the type of MoreHeadUI
-            var moreHeadUIType = typeof(MoreHeadUI);
+                // Get the type of MoreHeadUI
+                var moreHeadUIType = typeof(MoreHeadUI);
 
-            const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
-            // Use reflection to access the decorationsPage field
+                const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+                // Use reflection to access the decorationsPage field
 
-            var currentTagFilterField = moreHeadUIType.GetField("LIMB_TAGS", bindingFlags);
-            string[] LIMB_TAGS = (string[])currentTagFilterField.GetValue(null);
+                var currentTagFilterField = moreHeadUIType.GetField("LIMB_TAGS", bindingFlags);
+                string[] LIMB_TAGS = (string[])currentTagFilterField.GetValue(null);
 
-            
-            // Add a group tag for the scroll element
-            MoreHeadGroupStorage.tagGroupElements["ALL"].Add(decoGroup);
 
-            // 处理四肢装饰物的特殊情况
-            if (LIMB_TAGS.Contains(decoration.ParentTag.ToUpper()))
-            {
-                // 同时添加到LIMBS标签分类
-                MoreHeadGroupStorage.tagGroupElements["LIMBS"].Add(decoGroup);
-            }
-            // 同时添加到父标签分类
-            else
-            {
-                if (MoreHeadGroupStorage.tagGroupElements.TryGetValue(decoration.ParentTag.ToUpper(), out var elements))
+                // Add a group tag for the scroll element
+                MoreHeadGroupStorage.tagGroupElements["ALL"].Add(decoGroup);
+
+                if (decoGroup != null)
                 {
-                    elements.Add(decoGroup);
+                    if (!MoreHeadUIStorage.groupButtonTags.ContainsKey(decoGroup))
+                    {
+                        Logger.Log($"Initialising group button tag list for {decoGroup}");
+                        MoreHeadUIStorage.groupButtonTags[decoGroup] = new List<string>();
+                    }
+
+                    MoreHeadUIStorage.groupButtonTags[decoGroup].Add("ALL");
                 }
 
-            }
+                // 处理四肢装饰物的特殊情况
+                if (LIMB_TAGS.Contains(decoration.ParentTag.ToUpper()))
+                {
+                    // 同时添加到LIMBS标签分类
+                    MoreHeadGroupStorage.tagGroupElements["LIMBS"].Add(decoGroup);
 
-            return true; // Return true to continue execution of the original method
+                    if (decoGroup != null)
+                    {
+                        MoreHeadUIStorage.groupButtonTags[decoGroup].Add("LIMBS");
+                    }
+                }
+                // 同时添加到父标签分类
+                else
+                {
+                    if (MoreHeadGroupStorage.tagGroupElements.TryGetValue(decoration.ParentTag.ToUpper(), out var elements))
+                    {
+                        elements.Add(decoGroup);
+
+                        if (decoGroup != null)
+                        {
+                            MoreHeadUIStorage.groupButtonTags[decoGroup].Add(decoration.ParentTag.ToUpper());
+                        }
+                    }
+
+                }
+
+                return true; // Return true to continue execution of the original method
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Error creating decoration button {decoration.Name}: {e}");
+                throw;
+            }
         }
 
         private static string GetGroupButtonText(string group)
@@ -441,7 +489,7 @@ namespace MoreHead
         // Create a title for the group
         private static void CreateGroupButton(REPOPopupPage page, string groupName)
         {
-            Logger.LogError($"Creating group button: {groupName}");
+            Logger.Log($"Creating group button: {groupName}");
             try
             {
                 // I'm not going to figure this out right now
@@ -464,6 +512,7 @@ namespace MoreHead
                 if (repoButton != null)
                 {
                     MoreHeadUIStorage.groupButtons[groupName] = repoButton;
+                    MoreHeadUIStorage.groupButtonTags[groupName] = new List<string>();
                 }
                 else
                 {
@@ -547,12 +596,20 @@ namespace MoreHead
                 nameof(HeadDecorationManagerHelpers.Patch2_LoadDecorationBundle)
             )!;
 
+        static readonly MethodInfo AddDecorationHelper3 =
+            AccessTools.Method(
+                typeof(HeadDecorationManagerHelpers),
+                nameof(HeadDecorationManagerHelpers.Patch3_LoadDecorationBundle)
+            )!;
+
+
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instrs)
         {
             var codes = instrs.ToList();
 
             bool foundEnsureUniqueName = false;
             bool foundEnsureUniqueDisplayName = false;
+            bool foundBlacklistCheck = false;
 
             for (int i = 0; i < codes.Count(); ++i)
             {
@@ -588,7 +645,33 @@ namespace MoreHead
                     i += 2; // skip the next two instructions
                 }
 
-                if (foundEnsureUniqueDisplayName && foundEnsureUniqueName)
+                if (!foundBlacklistCheck)
+                {
+                    if (codes[i].opcode == OpCodes.Call
+                        && codes[i].operand == AccessTools.Method(
+                            typeof(DecorationBlacklistManager),
+                            nameof(DecorationBlacklistManager.IsBlacklisted),
+                            new[] { typeof(string) }))
+                    {
+                        // i+2 is the branch that jumps *over* the true-branch when return == false
+                        // so the *true*-branch starts at i+3
+                        int insertPos = i + 4;
+
+                        // **Before we can use displayName, we have to reload it onto the stack:**
+
+                        Logger.Log($"Patching AddDecorationHelper3");
+
+                        codes.Insert(insertPos++, new CodeInstruction(OpCodes.Call, AddDecorationHelper3));
+
+                        Logger.Log($"Patched AddDecorationHelper3");
+
+                        foundBlacklistCheck = true;
+
+                        i += 5; // skip the next five instructions
+                    }
+                }
+
+                if (foundEnsureUniqueDisplayName && foundEnsureUniqueName && foundBlacklistCheck)
                 {
                     break;
                 }
@@ -685,7 +768,16 @@ namespace MoreHead
                             elements[i].visibility = false;
                         }
                     }
+
+                    for (int i = 0; i < groups.Count(); ++i)
+                    {
+                        if (groups[i] != null)
+                        {
+                            MoreHeadUIStorage.groupButtons[groups[i]].repoScrollViewElement.visibility = false;
+                        }
+                    }
                 }
+
 
                 Logger.Log($"Element visibility hidden");
 
@@ -711,6 +803,18 @@ namespace MoreHead
                             if (elements[i] != null && MoreHeadGroupStorage.activeGroups[groups[i]])
                             {
                                 elements[i].visibility = true;
+                            }
+                        }
+                    }
+
+
+                    for (int i = 0; i < groups.Count(); ++i)
+                    {
+                        if (groups[i] != null)
+                        {
+                            if (MoreHeadUIStorage.groupButtonTags[groups[i]].Contains(tag))
+                            {
+                                MoreHeadUIStorage.groupButtons[groups[i]].repoScrollViewElement.visibility = true;
                             }
                         }
                     }
