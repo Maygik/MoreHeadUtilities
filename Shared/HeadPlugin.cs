@@ -9,7 +9,7 @@ using MoreHead;
 
 namespace MoreHeadUtilities.Plugin
 {
-    [BepInPlugin("com.maygik.moreheadutilities", "MoreHeadUtilities", "1.0.0")]
+    [BepInPlugin("com.maygik.moreheadutilities", "MoreHeadUtilities", "1.0.8")]
     public class MoreHeadUtilitiesPlugin : BaseUnityPlugin
     {
 

@@ -53,6 +53,8 @@ Hips
 
 
 ## Updates
+- 1.0.7
+	- Updated to fix MoreHead's blacklist causing sorting problems
 - 1.0.6
     - Groups are now only visible if they have a decoration fulfilling the selected tag filter
 - 1.0.5
