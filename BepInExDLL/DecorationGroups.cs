@@ -1,4 +1,16 @@
-﻿using System;
+﻿#region Assembly MenuLib, Version=2.5.1.0, Culture=neutral, PublicKeyToken=null
+// C:\Users\xande\AppData\Roaming\Thunderstore Mod Manager\DataFolder\REPO\profiles\Moddedleeldeded\BepInEx\plugins\nickklmao-MenuLib\MenuLib.dll
+// Decompiled with ICSharpCode.Decompiler 8.2.0.7535
+#endregion
+
+
+using System;
+using MenuLib.Structs;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+using System;
 using BepInEx.Logging;
 using MenuLib;
 using UnityEngine;
@@ -15,7 +27,8 @@ using BepInEx.Configuration;
 using System.Xml.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;using System;
+using System.Linq;
+using System;
 using BepInEx.Logging;
 using MenuLib;
 using UnityEngine;
@@ -40,6 +53,10 @@ using System.Reflection.Emit;
 using JetBrains.Annotations;
 using Logger = BepInEx.Logging.Logger;
 using MoreHead.MoreHead.Patchers;
+using BepInEx;
+
+using MenuLib.MonoBehaviors;
+using MenuLib.Structs;
 
 namespace MoreHead
 {
@@ -108,7 +125,7 @@ namespace MoreHead
 
                 var decorationManagerType = typeof(HeadDecorationManager);
                 const BindingFlags F = BindingFlags.Static | BindingFlags.NonPublic;
-                
+
                 // Check if the bundleBaseName contains "~" and split it
                 string? group = null;
 
@@ -131,7 +148,7 @@ namespace MoreHead
             public static void Patch3_LoadDecorationBundle()
             {
                 // Remove last input if asset bundle was never fully loaded
-                HeadDecorationManagerStorage.Decorations.RemoveAt(HeadDecorationManagerStorage.Decorations.Count-1);
+                HeadDecorationManagerStorage.Decorations.RemoveAt(HeadDecorationManagerStorage.Decorations.Count - 1);
                 Logger.Log($"Removing last from decoration group list");
             }
         }
@@ -150,7 +167,7 @@ namespace MoreHead
 
                 Logger.Log("Retrieving ALL_TAGS field from MoreHeadUI");
                 var tags = (string[])uiType.GetField("ALL_TAGS", F).GetValue(null)!;
-                
+
                 foreach (string tag in tags)
                 {
                     MoreHeadGroupStorage.tagGroupElements[tag] = new List<string>();
@@ -313,7 +330,7 @@ namespace MoreHead
             AccessTools.Method(
                 typeof(MoreHeadUIHelpers),
                 nameof(MoreHeadUIHelpers.Patch2_CreateAllDecorationButtons),
-                new[] { typeof(REPOPopupPage)}
+                new[] { typeof(REPOPopupPage) }
             )!;
 
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instrs, ILGenerator il)
@@ -404,6 +421,7 @@ namespace MoreHead
                 string? decoGroup =
                     HeadDecorationManagerStorage.Decorations[HeadDecorationManager.Decorations.IndexOf(decoration)];
 
+                // Create group button if it doesn't exist
                 if (decoGroup != null && decoGroup != "")
                 {
                     if (MoreHeadGroupStorage.tagGroupElements.TryGetValue("ALL", out var groupElements))
@@ -519,7 +537,7 @@ namespace MoreHead
                     throw new Exception($"Failed to create group button.");
                 }
 
-                    MoreHeadUIStorage.group = groupName;
+                MoreHeadUIStorage.group = groupName;
                 Logger.Log($"Created group button: {groupName}");
             }
             catch (Exception e)
@@ -574,7 +592,7 @@ namespace MoreHead
         static readonly MethodInfo EnsureUniqueDisplayName = AccessTools.Method(
                 typeof(HeadDecorationManager),
                 "EnsureUniqueDisplayName",
-                new [] {typeof(string)}
+                new[] { typeof(string) }
             );
 
         static readonly MethodInfo EnsureUniqueName = AccessTools.Method(
@@ -615,7 +633,7 @@ namespace MoreHead
             {
                 var ci = codes[i];
                 // find the call to EnsureUniqueDisplayName(string)
-                
+
                 if (ci.opcode == OpCodes.Call && ci.operand == EnsureUniqueDisplayName)
                 {
                     // insert before it a Dup + call to our helper
@@ -630,7 +648,7 @@ namespace MoreHead
                     Logger.Log($"Patched AddDecorationHelper2");
 
                     foundEnsureUniqueDisplayName = true;
-                    i+=2; // skip the next two instructions
+                    i += 2; // skip the next two instructions
                 }
 
                 if (ci.opcode == OpCodes.Call && ci.operand == EnsureUniqueName)
@@ -719,11 +737,11 @@ namespace MoreHead
 
 
     [HarmonyPatch(typeof(MoreHeadUI))]
-    [HarmonyPatch("ShowTagDecorations", new [] {typeof(string)})]
-    static class Patch_ShowTagDecorations
+    [HarmonyPatch("UpdateDecorationVisibility")]
+    static class Patch_UpdateDecorationVisibility
     {
         [HarmonyPrefix]
-        static bool Prefix(string tag)
+        static bool Prefix()
         {
             try
             {
@@ -748,7 +766,191 @@ namespace MoreHead
                 string currentTagFilter = (string)currentTagFilterField.GetValue(null);
 
 
+                // Use reflection to access the decorationsPage currentSearchQuery field
+                var currentSearchQuieryField = moreHeadUIType.GetField("currentSearchQuery", bindingFlags);
+                string currentSearchQuery = "";
+                try
+                {
+                    currentSearchQuery = (string)currentSearchQuieryField.GetValue(null);
+                }
+                catch
+                {
 
+                }
+
+
+                // Use reflection to access the decorationDataCache field
+                var decorationDataCacheField = moreHeadUIType.GetField("decorationDataCache", bindingFlags);
+                Dictionary<string, List<DecorationInfo>> decorationDataCache = (Dictionary<string, List<DecorationInfo>>)decorationDataCacheField.GetValue(null);
+
+                // Use reflection to access the decorationButtons field
+                var decorationButtonsField = moreHeadUIType.GetField("decorationButtons", bindingFlags);
+                Dictionary<string, REPOButton> decorationButtons = (Dictionary<string, REPOButton>)decorationButtonsField.GetValue(null);
+
+                // Run replacement method
+                ShowDecorationsForTag(decorationsPage, tagScrollViewElements, currentTagFilter, currentSearchQuery, decorationDataCache, decorationButtons);
+
+                return false; // Skip execution of the original method.
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Error updating visibility");
+            }
+
+            return true; // Continue execution of the original method in case of error.
+        }
+
+        // Full replacement of the original method
+        // Mostly copy-pasted from main MoreHead repo
+        // https://github.com/Masaicker/repo-MoreHead/blob/main/MoreHead/MoreHeadUI.cs
+        static void ShowDecorationsForTag(REPOPopupPage decorationsPage,
+            Dictionary<string, List<REPOScrollViewElement>> tagScrollViewElements,
+            string currentTagFilter,
+            string currentSearchQuery,
+            Dictionary<string, List<DecorationInfo>> decorationDataCache,
+            Dictionary<string, REPOButton> decorationButtons
+            )
+        {
+            try
+            {
+                if (decorationsPage == null || string.IsNullOrEmpty(currentTagFilter))
+                    return;
+
+                if (!tagScrollViewElements.TryGetValue(currentTagFilter, out var elements))
+                    return;
+
+                if (!decorationDataCache.TryGetValue(currentTagFilter, out var decorations))
+                    return;
+
+                // Hide all decorations, then selectively enable them based on search and tag filters
+                foreach (var kvp in tagScrollViewElements)
+                {
+                    foreach (var element in kvp.Value)
+                    {
+                        if (element != null)
+                        {
+                            element.visibility = false;
+                        }
+                    }
+                }
+
+                bool isSearchEmpty = string.IsNullOrEmpty(currentSearchQuery);
+                Logger.Log($"Showing decorations for tag: {currentTagFilter} with search query: '{currentSearchQuery}' (isSearchEmpty: {isSearchEmpty})");
+
+                // If no tag filter is applied, show all decorations
+                if (isSearchEmpty)
+                {
+                    foreach (var element in elements)
+                    {
+                        if (element != null)
+                        {
+                            element.visibility = true;
+
+                            // Find the decoration name by looking through decorationButtons
+                            string? decorationName = decorationButtons
+                                .FirstOrDefault(kvp => kvp.Value?.repoScrollViewElement == element)
+                                .Key;
+
+                            if (!string.IsNullOrEmpty(decorationName))
+                            {
+                                int decoIndex = HeadDecorationManager.Decorations.FindIndex(d => d.Name == decorationName);
+                                if (decoIndex >= 0)
+                                {
+                                    string? decoGroup = HeadDecorationManagerStorage.Decorations[decoIndex];
+                                    if (decoGroup != null && MoreHeadGroupStorage.activeGroups.ContainsKey(decoGroup))
+                                    {
+                                        element.visibility = MoreHeadGroupStorage.activeGroups[decoGroup];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    string searchLower = currentSearchQuery.ToLower();
+
+                    // 直接遍历当前标签的装饰物数据，避免遍历所有按钮
+                    foreach (var decoration in decorations)
+                    {
+                        if (decorationButtons.TryGetValue(decoration.Name ?? string.Empty, out REPOButton button) &&
+                            button != null &&
+                            elements.Contains(button.repoScrollViewElement))  // 兼容分组功能
+                        {
+                            button.repoScrollViewElement.visibility =
+                                decoration.DisplayName?.ToLower().Contains(searchLower) == true;
+                        }
+                    }
+                }
+
+
+                // Grouped Elements
+
+                // Only show group buttons if there is no search query
+                if (isSearchEmpty)
+                {
+                    Logger.Log($"Showing groups for tag filter: {currentTagFilter}");
+
+                    for (int i = 0; i < MoreHeadUIStorage.groupButtons.Count(); ++i)
+                    {
+                        string groupName = MoreHeadUIStorage.groupButtons.ElementAt(i).Key;
+                        MoreHeadUIStorage.groupButtonTags.TryGetValue(groupName, out var groupTags);
+
+                        bool shouldShow = (currentTagFilter == "ALL" || groupTags.Contains(currentTagFilter));
+
+                        if (shouldShow)
+                        {
+                            Logger.Log($"Showing group for tag : {groupName}");
+                            MoreHeadUIStorage.groupButtons[groupName].repoScrollViewElement.visibility = true;
+                        }
+                        else
+                        {
+                            MoreHeadUIStorage.groupButtons[groupName].repoScrollViewElement.visibility = false;
+                        }
+
+                    }
+                }
+                // Otherwise, only show decorations matching the search query
+                else
+                {
+                    // Hide all group buttons
+                    for (int i = 0; i < MoreHeadUIStorage.groupButtons.Count(); ++i)
+                    {
+                        string groupName = MoreHeadUIStorage.groupButtons.ElementAt(i).Key;
+                        MoreHeadUIStorage.groupButtons[groupName].repoScrollViewElement.visibility = false;
+                    }
+                }
+
+
+                // Finally, set scroll position
+                // If group opened/closed, don't reset position, adjust to keep current view
+                if (MoreHeadUIStorage.resetPosition)
+                {
+                    decorationsPage.scrollView.SetScrollPosition(0);
+                    decorationsPage.scrollView.UpdateElements();
+                }
+                else
+                {
+                    // Just update elements to reflect visibility changes
+                    // Can't seem to find a better way to keep position otherwise
+                    decorationsPage.scrollView.UpdateElements();
+                }
+
+                
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Error in ShowDecorationsForTag: {e.Message}");
+            }
+        }
+    }
+
+}
+
+/*
+
+            try
+            {
                 Logger.Log($"Running the proper ShowTagDecorations function");
 
                 // 隐藏当前标签的装饰物按钮
@@ -759,84 +961,90 @@ namespace MoreHead
 
                 Logger.Log($"There are {elements.Count()} scroll elements and {groups.Count()} grouped elements");
 
-                if (!string.IsNullOrEmpty(currentTagFilter))
+                if (currentSearchQuery == null)
                 {
-                    for (int i = 0; i < elements.Count(); ++i)
-                    {
-                        if (elements[i] != null)
-                        {
-                            elements[i].visibility = false;
-                        }
-                    }
+                    currentSearchQuery = "";
+                }
 
-                    for (int i = 0; i < groups.Count(); ++i)
+                for (int i = 0; i < elements.Count(); ++i)
+                {
+                    if (elements[i] != null)
                     {
-                        if (groups[i] != null)
-                        {
-                            MoreHeadUIStorage.groupButtons[groups[i]].repoScrollViewElement.visibility = false;
-                        }
+                        elements[i].visibility = elements[i].tag == currentTagFilter && elements[i].name.Contains(currentSearchQuery);
                     }
                 }
 
+                Logger.Log($"Elements hidden for tag filter: {currentTagFilter}");
 
-                Logger.Log($"Element visibility hidden");
-
-                // 显示新标签的装饰物按钮
-                tagScrollViewElements.TryGetValue(tag, out elements);
-                MoreHeadGroupStorage.tagGroupElements.TryGetValue(tag, out groups);
-
-                Logger.Log($"There are {elements.Count()} tagged scroll elements and {groups.Count()} tagged grouped elements");
-
-                if (!string.IsNullOrEmpty(tag))
+                // Only use groups if there is not a search query
+                if (currentSearchQuery.IsNullOrWhiteSpace())
                 {
-                    for (int i = 0; i < elements.Count(); ++i)
-                    {
-                        if (groups[i] == null)
-                        {
-                            if (elements[i] != null)
-                            {
-                                elements[i].visibility = true;
-                            }
-                        }
-                        else
-                        {
-                            if (elements[i] != null && MoreHeadGroupStorage.activeGroups[groups[i]])
-                            {
-                                elements[i].visibility = true;
-                            }
-                        }
-                    }
-
-
+                    Logger.Log($"Showing groups for tag filter: {currentTagFilter}");
                     for (int i = 0; i < groups.Count(); ++i)
                     {
                         if (groups[i] != null)
                         {
-                            if (MoreHeadUIStorage.groupButtonTags[groups[i]].Contains(tag))
+                            // Check if the group contains the current tag filter
+                            bool isActive = MoreHeadGroupStorage.activeGroups[groups[i]];
+                            Logger.Log($"Group {groups[i]} is active: {isActive}");
+
+                            MoreHeadUIStorage.groupButtonTags.TryGetValue(groups[i], out var groupTags);
+                            
+
+                            if (isActive && (currentTagFilter == "ALL" || groupTags.Contains(currentTagFilter)))
                             {
+                                Logger.Log($"Showing group for tag : {groups[i]}");
                                 MoreHeadUIStorage.groupButtons[groups[i]].repoScrollViewElement.visibility = true;
                             }
+                            else
+                            {
+                                MoreHeadUIStorage.groupButtons[groups[i]].repoScrollViewElement.visibility = false;
+
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Logger.Log($"Hiding all groups due to search query");
+                    for (int i = 0; i < groups.Count(); ++i)
+                    {
+                        if (groups[i] != null)
+                        {
+                            MoreHeadUIStorage.groupButtons[groups[i]].repoScrollViewElement.visibility = true;
                         }
                     }
                 }
 
-                // 更新当前标签
-                currentTagFilterField.SetValue(null, tag);
 
-                if (MoreHeadUIStorage.resetPosition)
+                    Logger.Log($"Elements and groups hidden for tag filter: {currentTagFilter}");
+
+                // Show decorations for active groups
+                List<string?> elementGroups;
+                MoreHeadGroupStorage.tagGroupElements.TryGetValue(currentTagFilter, out elementGroups);
+
+
+                for (int i = 0; i < elementGroups.Count(); ++i)
                 {
-                    decorationsPage.scrollView.SetScrollPosition(0);
+                    if (elementGroups[i] == null)
+                        continue;
+
+                    bool isActive = MoreHeadGroupStorage.activeGroups[elementGroups[i]];
+
+                    if (isActive && elementGroups[i].Contains(currentSearchQuery))
+                    {
+                        Logger.Log($"Showing element for group : {elementGroups[i]}");
+                        elements[i].visibility = true;
+                    }
                 }
 
-                decorationsPage.scrollView.UpdateElements();
+
+
+                Logger.Log($"All elements updated for tag filter: {currentTagFilter}");
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error showing decorations for tag: {tag} | Error: {e.Message}");
+                Logger.LogError($"Error in ShowDecorationsForTag: {e}");
             }
-
-            return false; // Continue execution of the original method.
         }
-
-    }
-}
+*/

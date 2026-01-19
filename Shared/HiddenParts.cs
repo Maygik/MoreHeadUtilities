@@ -14,6 +14,7 @@ using System.Net;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using Debug = UnityEngine.Debug;
+using Logger = BepInEx.Logging.Logger;
 
 #if BEPINEX
 using BepInEx.Logging;
@@ -242,12 +243,14 @@ namespace MoreHeadUtilities
             // For each mesh in the part
             for (int i = 0; i < partNames[(int)partToShow].Length; ++i)
             {
-                MeshRenderer partRenderer = partRenderers[(int)partToShow][i].gameObject.GetComponent<MeshRenderer>();
-
-                // If the part is found, disable the renderer  
-                if (partRenderer)
+                MeshRenderer meshRenderer = partRenderers[(int)partToShow][i];
+                if (meshRenderer != null)
                 {
-                    partRenderer.enabled = true;
+                    MeshRenderer partRenderer = meshRenderer.gameObject.GetComponent<MeshRenderer>();
+                    if (partRenderer != null)
+                    {
+                        partRenderer.enabled = true;
+                    }
                 }
             }
         }
@@ -257,12 +260,14 @@ namespace MoreHeadUtilities
             // For each mesh in the part
             for (int i = 0; i < partNames[(int)partToHide].Length; ++i)
             {
-                MeshRenderer partRenderer = partRenderers[(int)partToHide][i].gameObject.GetComponent<MeshRenderer>();
-
-                // If the part is found, disable the renderer  
-                if (partRenderer)
+                MeshRenderer meshRenderer = partRenderers[(int)partToHide][i];
+                if (meshRenderer != null)
                 {
-                    partRenderer.enabled = false;
+                    MeshRenderer partRenderer = meshRenderer.gameObject.GetComponent<MeshRenderer>();
+                    if (partRenderer != null)
+                    {
+                        partRenderer.enabled = false;
+                    }
                 }
             }
         }

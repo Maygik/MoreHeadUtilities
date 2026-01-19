@@ -53,6 +53,10 @@ Hips
 
 
 ## Updates
+- 1.0.9
+	- Fixed the UI breaking when searching within MoreHead. Items will not have group headings whilst searching.
+- 1.0.8
+	- I forgot what I added here
 - 1.0.7
 	- Updated to fix MoreHead's blacklist causing sorting problems
 - 1.0.6
