@@ -1,1 +1,2 @@
-I'm terrible at source control, sorry :)
+You can download the final mod on thunderstore here:
+https://thunderstore.io/c/repo/p/Maygik/MoreHeadUtilities/
