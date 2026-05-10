@@ -1,9 +1,9 @@
 {
   "name": "MoreHeadUtilities",
-  "version_number": "1.0.9",
+  "version_number": "1.0.10",
   "website_url": "https://github.com/Maygik/MoreHeadUtilities",
   "description": "Allows MoreHead cosmetics to hide body parts and use groups.",
   "dependencies": [
-	"YMC_MHZ-MoreHead-1.4.3"	
+	"YMC_MHZ-MoreHead-1.4.5"	
   ]
 }

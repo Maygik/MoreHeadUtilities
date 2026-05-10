@@ -53,6 +53,12 @@ Hips
 
 
 ## Updates
+-1.0.10
+	- Updated to support MoreHead 1.4.5
+	- Updated group support
+		- Adjusted search method to properly match MoreHead
+		- More cleanly creates group buttons in the backend
+		- Reduced jumpiness when opening/closing a group
 - 1.0.9
 	- Fixed the UI breaking when searching within MoreHead. Items will not have group headings whilst searching.
 - 1.0.8

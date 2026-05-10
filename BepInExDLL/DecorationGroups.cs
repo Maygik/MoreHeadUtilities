@@ -174,7 +174,7 @@ namespace MoreHead
                 }
             }
 
-            public static void Patch2_CreateAllDecorationButtons(REPOPopupPage page)
+            public static List<DecorationInfo> Patch2_CreateAllDecorationButtons()
             {
                 try
                 {
@@ -245,27 +245,9 @@ namespace MoreHead
                     Logger.Log($"externalDecorations sorted");
 
 
-                    var CreateDecorationButtonMI = AccessTools.Method(
-                        typeof(MoreHeadUI),
-                        "CreateDecorationButton",
-                        new Type[] { typeof(REPOPopupPage), typeof(DecorationInfo) }
-                    )!;
-
-                    foreach (var decoration in builtInDecorations)
-                    {
-                        CreateDecorationButtonMI.Invoke(null, new object[] { page, decoration });
-                    }
-
-                    foreach (var decoration in externalDecorations)
-                    {
-                        CreateDecorationButtonMI.Invoke(null, new object[] { page, decoration });
-                    }
-
-                    Logger.Log($"externalDecorations all created");
-
-                    MoreHeadUIStorage.group = null;
-
-                    // Return from ORIGINAL function, not this patch
+                    return builtInDecorations
+                        .Concat(externalDecorations)
+                        .ToList();
                 }
                 catch (Exception e)
                 {
@@ -329,15 +311,13 @@ namespace MoreHead
         static readonly MethodInfo Helper2 =
             AccessTools.Method(
                 typeof(MoreHeadUIHelpers),
-                nameof(MoreHeadUIHelpers.Patch2_CreateAllDecorationButtons),
-                new[] { typeof(REPOPopupPage) }
+                nameof(MoreHeadUIHelpers.Patch2_CreateAllDecorationButtons)
             )!;
 
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instrs, ILGenerator il)
         {
             var codes = instrs.ToList();
             bool injected1 = false;
-            int toListHits = 0;
             bool injected2 = false;
 
             for (int i = 0; i < codes.Count; i++)
@@ -346,44 +326,45 @@ namespace MoreHead
 
                 // -------- Inject #1 after tagScrollViewElements.Clear() --------
                 if (!injected1
-                    && ci.opcode == OpCodes.Callvirt
-                    && ci.operand == ClearScrolls)
+                    && ci.opcode == OpCodes.Callvirt        // Make sure it's a callvirt, not a call (Clear() is an instance method, not static)
+                    && ci.operand is MethodInfo method1     // Make sure it's a callvirt to Clear()
+                    && method1.Equals(ClearScrolls))        // Make sure it's the Clear() on tagScrollViewElements, not some other Clear() call
                 {
                     Logger.Log($"Patching Patch1_CreateAllDecorationButtons");
                     // insert your first helper immediately after Clear()
                     codes.Insert(++i, new CodeInstruction(OpCodes.Call, Helper1));
                     injected1 = true;
+
+                    Logger.Log($"Patched Patch1_CreateAllDecorationButtons");
+
                     continue;
                 }
 
                 // -------- Inject #2 after the *second* .ToList() call --------
                 if (!injected2
-                    && ci.opcode == OpCodes.Call
-                    && ci.operand == ToListDecorations)
+                    && ci.opcode == OpCodes.Call            // Make sure it's a call, not callvirt (ToList() is a static method)
+                    && ci.operand is MethodInfo method2     // Make sure it's a call to ToList()
+                    && method2.Equals(ToListDecorations))   // Make sure it's the ToList() call on the decorations list, not some other ToList() call (there are several in this method)
                 {
                     Logger.Log("Patching Patch2_CreateAllDecorationButtons");
 
-                    // 1) Find the index of the *last* 'ret' in the method's IL
-                    int retIndex = codes.FindLastIndex(ci => ci.opcode == OpCodes.Ret);
-                    if (retIndex < 0)
-                        throw new InvalidOperationException("Couldn't find the final ret in CreateAllDecorationButtons");
+                    // Store the return value, call helper, then restore it
+                    // Stack before: [ ..., List<DecorationInfo> ]
+                    var localVar = il.DeclareLocal(typeof(List<DecorationInfo>));
 
-                    var retInst = codes[retIndex];
-                    var leaveLabel = il.DefineLabel();
-                    // Attach the label to the real 'ret' instruction.
-                    retInst.labels.Add(leaveLabel);
+                    codes.Insert(++i, new CodeInstruction(OpCodes.Pop));
+                    codes.Insert(++i, new CodeInstruction(OpCodes.Call, Helper2));
 
-                    // 3) Inject your helper call
-                    codes.Insert(++i, new CodeInstruction(OpCodes.Ldarg_0));          // push 'page'
-                    codes.Insert(++i, new CodeInstruction(OpCodes.Call, Helper2));   // call Helper2(page)
-
-                    // 4) Branch (Leave) to that final ret, properly unwinding any try/finally
-                    codes.Insert(++i, new CodeInstruction(OpCodes.Leave_S, leaveLabel));
 
                     Logger.Log("Patched Patch2_CreateAllDecorationButtons");
 
-                    // 5) Done—break so we keep the rest of the original IL (handlers & final epilogue)
-                    break;
+                    injected2 = true;
+                    i += 3; // skip inserted instructions
+                }
+
+                if (injected1 && injected2)
+                {
+                    break; // stop iterating once we've injected both helpers
                 }
             }
 
@@ -507,7 +488,7 @@ namespace MoreHead
         // Create a title for the group
         private static void CreateGroupButton(REPOPopupPage page, string groupName)
         {
-            Logger.Log($"Creating group button: {groupName}");
+         //   Logger.Log($"Creating group button: {groupName}");
             try
             {
                 // I'm not going to figure this out right now
@@ -538,7 +519,7 @@ namespace MoreHead
                 }
 
                 MoreHeadUIStorage.group = groupName;
-                Logger.Log($"Created group button: {groupName}");
+                //Logger.Log($"Created group button: {groupName}");
             }
             catch (Exception e)
             {
@@ -556,30 +537,72 @@ namespace MoreHead
         {
             Logger.Log($"OnDecorationGroupButtonClick called for group: {groupName}");
 
-            MoreHeadGroupStorage.activeGroups[groupName] = !MoreHeadGroupStorage.activeGroups[groupName];
-
-            Logger.Log($"Invoking show tag decorations");
-
 
             var MoreHeadUIType = typeof(MoreHeadUI);
             var currentTagFilterField = MoreHeadUIType.GetField("currentTagFilter", BindingFlags.Static | BindingFlags.NonPublic);
             string currentTagFilter = (string)currentTagFilterField.GetValue(null);
 
-            MoreHeadUIStorage.resetPosition = false;
+            REPOButton? groupButton = null;
+            MoreHeadUIStorage.groupButtons.TryGetValue(groupName, out groupButton);
 
+            // Get the position of the button before toggling the group
+            RectTransform? anchor = groupButton?.rectTransform;
+            float beforeY = anchor != null ? anchor.position.y : 0F;
+
+            MoreHeadGroupStorage.activeGroups[groupName] = !MoreHeadGroupStorage.activeGroups[groupName];
+
+            MoreHeadUIStorage.resetPosition = false; // Don't reset scroll position this time
+
+            // Re-show the current tag to update visibility of decorations based on the new group state
             ShowTagDecorationsMI.Invoke(
                 null,
                 new object[] { currentTagFilter }
             );
 
             // Update the button text
-            if (MoreHeadUIStorage.groupButtons.TryGetValue(groupName, out var button))
+            if (groupButton != null)
             {
                 string buttonText = GetGroupButtonText(groupName);
-                button.labelTMP.text = buttonText;
+                groupButton.labelTMP.text = buttonText;
             }
 
-            MoreHeadUIStorage.resetPosition = true;
+            // Adjust scroll position to keep the same elements in view after toggling the group
+            if (MoreHeadUIStorage.page != null && anchor != null)
+            {
+                UnityEngine.MonoBehaviour.FindObjectOfType<MonoBehaviour>()?.StartCoroutine(
+                    RestoreScrollAfterGroupToggle(MoreHeadUIStorage.page, anchor, beforeY)
+                );
+            }
+
+            MoreHeadUIStorage.resetPosition = true; // We want to reset position for the next time, just not this time
+        }
+
+
+        // Keep scroll position stable when toggling a group
+        private static System.Collections.IEnumerator RestoreScrollAfterGroupToggle(REPOPopupPage page, RectTransform anchor, float beforeY)
+        {
+            yield return null; // Wait one frame for the layout to update. Kinda hacky.
+
+            // Update layout to get the new position of the anchor
+            Canvas.ForceUpdateCanvases();
+            page.scrollView.UpdateElements();
+
+            // Calculate the change in position of the anchor
+            float afterY = anchor.position.y;
+            float deltaY = beforeY - afterY;
+
+            // Adjust the scroll position by the change in anchor position to keep it stable
+            var scrollRect = page.scrollView.GetComponentInChildren<ScrollRect>(true);
+            if (scrollRect != null && scrollRect.content != null)
+            {
+                Vector2 pos = scrollRect.content.anchoredPosition;
+                pos.y += deltaY;
+                scrollRect.content.anchoredPosition = pos;
+            }
+
+            // Update layout again to ensure everything is in the correct position
+            Canvas.ForceUpdateCanvases();
+            page.scrollView.UpdateElements();
         }
     }
 
@@ -835,11 +858,13 @@ namespace MoreHead
                 }
 
                 bool isSearchEmpty = string.IsNullOrEmpty(currentSearchQuery);
+
                 Logger.Log($"Showing decorations for tag: {currentTagFilter} with search query: '{currentSearchQuery}' (isSearchEmpty: {isSearchEmpty})");
 
                 // If no tag filter is applied, show all decorations
                 if (isSearchEmpty)
                 {
+                    Logger.Log($"No search query, showing all decorations for tag: {currentTagFilter}");
                     foreach (var element in elements)
                     {
                         if (element != null)
@@ -851,14 +876,16 @@ namespace MoreHead
                                 .FirstOrDefault(kvp => kvp.Value?.repoScrollViewElement == element)
                                 .Key;
 
-                            if (!string.IsNullOrEmpty(decorationName))
+                            // If we found the decoration name, find its group and set visibility based on group
+                            if (!string.IsNullOrEmpty(decorationName)) // Decoration has a name
                             {
-                                int decoIndex = HeadDecorationManager.Decorations.FindIndex(d => d.Name == decorationName);
-                                if (decoIndex >= 0)
+                                int decoIndex = HeadDecorationManager.Decorations.FindIndex(d => d.Name == decorationName); // Find the index of the decoration in the main list to get its group
+                                if (decoIndex >= 0) // If we found the decoration in the main list
                                 {
-                                    string? decoGroup = HeadDecorationManagerStorage.Decorations[decoIndex];
-                                    if (decoGroup != null && MoreHeadGroupStorage.activeGroups.ContainsKey(decoGroup))
+                                    string? decoGroup = HeadDecorationManagerStorage.Decorations[decoIndex]; // Get the group of the decoration
+                                    if (decoGroup != null && MoreHeadGroupStorage.activeGroups.ContainsKey(decoGroup)) // If the group is valid
                                     {
+                                        Logger.Log($"Setting visibility of decoration '{decorationName}' in group '{decoGroup}' to {MoreHeadGroupStorage.activeGroups[decoGroup]}");
                                         element.visibility = MoreHeadGroupStorage.activeGroups[decoGroup];
                                     }
                                 }
@@ -868,17 +895,19 @@ namespace MoreHead
                 }
                 else
                 {
-                    string searchLower = currentSearchQuery.ToLower();
+                    Logger.Log($"Search query present, filtering decorations for tag: {currentTagFilter} with search query: '{currentSearchQuery}'");
 
-                    // 直接遍历当前标签的装饰物数据，避免遍历所有按钮
+                    // Non-empty search: only show decorations matching the current tag that also match the search query
+                    string searchNormalized = currentSearchQuery.Replace(" ", "").ToLowerInvariant();
+
                     foreach (var decoration in decorations)
                     {
                         if (decorationButtons.TryGetValue(decoration.Name ?? string.Empty, out REPOButton button) &&
                             button != null &&
                             elements.Contains(button.repoScrollViewElement))  // 兼容分组功能
                         {
-                            button.repoScrollViewElement.visibility =
-                                decoration.DisplayName?.ToLower().Contains(searchLower) == true;
+                            var displayNameNormalized = decoration.DisplayName?.Replace(" ", "").ToLowerInvariant() ?? "";
+                            button.repoScrollViewElement.visibility = displayNameNormalized.Contains(searchNormalized);
                         }
                     }
                 }
