@@ -212,42 +212,18 @@ namespace MoreHead
 
                     Logger.Log($"Bound Delegate");
 
-                    // 2) build your list
-                    var builtInDecorations = allDecorations
-                        // cast Invoke(...) back to bool so Where gets a bool
-                        .Where(decoration => (bool)isBuiltInMI.Invoke(
-                            null,
-                            new object[] { decoration }
-                        ))
-                        // —or— simply use the delegate:
-                        //.Where(isBuiltIn)
-
-                        // Order by the DecorationInfo itself, not its Name
+                    var sortedDecorations = allDecorations
                         .OrderBy(decoration =>
-                            HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)]
+                            HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)] ?? string.Empty
                         )
+                        .ThenByDescending(decoration => decoration.IsVisible)
+                        .ThenBy(decoration => (bool)isBuiltInMI.Invoke(null, new object[] { decoration }) ? 0 : 1)
                         .ThenBy(decoration => decoration.DisplayName)
                         .ToList();
 
-                    Logger.Log($"builtInDecorations sorted");
+                    Logger.Log($"decorations sorted");
 
-                    var externalDecorations = allDecorations
-                        .Where(decoration => !(bool)isBuiltInMI.Invoke(
-                            null,
-                            new object[] { decoration }
-                        ))
-                        .OrderBy(decoration =>
-                            HeadDecorationManagerStorage.Decorations[allDecorations.IndexOf(decoration)] ?? char.MaxValue.ToString()
-                        )
-                        .ThenBy(decoration => decoration.DisplayName)
-                        .ToList();
-
-                    Logger.Log($"externalDecorations sorted");
-
-
-                    return builtInDecorations
-                        .Concat(externalDecorations)
-                        .ToList();
+                    return sortedDecorations;
                 }
                 catch (Exception e)
                 {
